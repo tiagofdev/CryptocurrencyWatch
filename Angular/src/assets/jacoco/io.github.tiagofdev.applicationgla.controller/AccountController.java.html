@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GLAbackend</a> &gt; <a href="index.source.html" class="el_package">io.github.tiagofdev.applicationgla.controller</a> &gt; <span class="el_source">AccountController.java</span></div><h1>AccountController.java</h1><pre class="source lang-java linenums">package io.github.tiagofdev.applicationgla.controller;
+
+import io.github.tiagofdev.applicationgla.dto.Response;
+import io.github.tiagofdev.applicationgla.service.CustomUserDetailsService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+import static java.time.LocalDateTime.now;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.OK;
+
+@RestController
+public class AccountController {
+
+    private final CustomUserDetailsService userService;
+
+<span class="nc" id="L19">    public AccountController(CustomUserDetailsService userService) {</span>
+<span class="nc" id="L20">        this.userService = userService;</span>
+<span class="nc" id="L21">    }</span>
+
+    @PostMapping(&quot;/register&quot;)
+    public ResponseEntity&lt;Response&gt; register(@RequestBody RegisterRequest request) {
+        try {
+<span class="nc" id="L26">            userService.createUser(request.getUsername(), request.getPassword());</span>
+<span class="nc" id="L27">            return ResponseEntity.ok(</span>
+<span class="nc" id="L28">                    Response.builder()</span>
+<span class="nc" id="L29">                            .timeStamp(now())</span>
+<span class="nc" id="L30">                            .status(OK)</span>
+<span class="nc" id="L31">                            .statusCode(OK.value())</span>
+<span class="nc" id="L32">                            .message(&quot;Success - Historical Retrieved&quot;)</span>
+<span class="nc" id="L33">                            .data(Map.of(&quot;result&quot;, &quot;value&quot;))</span>
+<span class="nc" id="L34">                            .build()</span>
+            );
+<span class="nc" id="L36">        } catch (IllegalArgumentException e) {</span>
+
+<span class="nc" id="L38">            return ResponseEntity.badRequest().body(</span>
+<span class="nc" id="L39">                    Response.builder()</span>
+<span class="nc" id="L40">                            .timeStamp(now())</span>
+<span class="nc" id="L41">                            .status(BAD_REQUEST)</span>
+<span class="nc" id="L42">                            .statusCode(BAD_REQUEST.value())</span>
+<span class="nc" id="L43">                            .message(e.getMessage())</span>
+<span class="nc" id="L44">                            .build()</span>
+            );
+        }
+
+    }
+
+    // DTO for registration request
+<span class="nc" id="L51">    static class RegisterRequest {</span>
+        private String username;
+        private String password;
+
+        public String getUsername() {
+<span class="nc" id="L56">            return username;</span>
+        }
+
+        public void setUsername(String username) {
+<span class="nc" id="L60">            this.username = username;</span>
+<span class="nc" id="L61">        }</span>
+
+        public String getPassword() {
+<span class="nc" id="L64">            return password;</span>
+        }
+
+        public void setPassword(String password) {
+<span class="nc" id="L68">            this.password = password;</span>
+<span class="nc" id="L69">        }</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

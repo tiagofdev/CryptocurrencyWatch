@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlertEntity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GLAbackend</a> &gt; <a href="index.source.html" class="el_package">io.github.tiagofdev.applicationgla.model</a> &gt; <span class="el_source">AlertEntity.java</span></div><h1>AlertEntity.java</h1><pre class="source lang-java linenums">package io.github.tiagofdev.applicationgla.model;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+
+@jakarta.persistence.Entity
+@Table(name = &quot;alert_entity&quot;)
+public class AlertEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Column(name = &quot;id&quot;, nullable = false)
+    private Long id;
+    @Getter
+    @Setter
+    @ManyToOne
+    @JoinColumn(name = &quot;user_id&quot;, nullable = false)
+    private UserEntity userEntity;
+    @Getter
+    @Setter
+    private String currency;
+    @Getter
+    @Setter
+    private boolean alertCriteria; // 1 for Threshold 0 for Percentage
+    @Getter
+    @Setter
+    private double threshold;
+    @Getter
+    @Setter
+    private boolean operator;
+    @Getter
+    @Setter
+    private boolean alertedToday;
+
+
+<span class="nc" id="L39">    public AlertEntity(UserEntity userEntity, String currency, boolean alertCriteria, boolean operator, double threshold) {</span>
+
+<span class="nc" id="L41">        this.userEntity = userEntity;</span>
+<span class="nc" id="L42">        this.currency = currency;</span>
+<span class="nc" id="L43">        this.alertCriteria = alertCriteria;</span>
+<span class="nc" id="L44">        this.operator = operator;</span>
+<span class="nc" id="L45">        this.threshold = threshold;</span>
+<span class="nc" id="L46">        this.alertedToday = false;</span>
+<span class="nc" id="L47">    }</span>
+
+<span class="nc" id="L49">    public AlertEntity() {</span>
+
+<span class="nc" id="L51">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

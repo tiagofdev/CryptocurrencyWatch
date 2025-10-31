@@ -1,0 +1,60 @@
+name: Angular Test Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '19'
+
+      - name: Install dependencies
+        run: npm install
+
+  test:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Run coverage tests
+        run: npm run test -- --code-coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: coverage/
+
+      - name: Run lint (Code Style)
+        run: npm run lint
+
+      - name: Security Test - Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: npm run snyk-test
+
+      - name: Performance Test - Lighthouse
+        run: npm run lighthouse
+
+  security:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Security Test - OWASP ZAP
+        run: docker run --network="host" -v $(pwd):/zap/wrk/:rw --name owasp -t owasp/zap2docker-stable zap-api-scan.py -t http://localhost:4200 -r testreport.html
+
+      - name: Upload OWASP ZAP Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: owasp-report
+          path: testreport.html
+          retention-days: 5
+

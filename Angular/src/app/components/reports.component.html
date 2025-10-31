@@ -1,0 +1,96 @@
+<style>
+  .info-box {
+    background-color: #ffd700; /* Green theme */
+    color: rgba(0, 0, 0, 0.64);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding-top: 40px;
+    margin-bottom: 12px;
+  }
+
+  .info-box h4 {
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .info-box .highlight {
+    color: #ffd100; /* Gold as a highlight color */
+  }
+
+  .label {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .tab-content {
+    margin-top: 20px;
+  }
+
+  .btn-radio .btn {
+    border-radius: 4px; /* Ensure buttons look like tabs */
+    margin-right: 8px;
+  }
+
+  .btn-radio .btn.active {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #fff;
+  }
+
+  .form-check-label {
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .form-check-input:disabled ~ input {
+    opacity: 0.5;
+    background-color: #cccccc;
+  }
+
+  .btn-outline-success:hover, .btn-outline-success:focus {
+    background-color: gold;
+    border-color: gold;
+    color: #000;
+  }
+
+  .form-check-input {
+    width: 2em;
+    height: 1em;
+    background-color: #ccc;
+    border-radius: 1em;
+    transition: background-color 0.3s;
+
+  }
+
+  .form-check-input:checked {
+    background-color: #28A745FF;
+  }
+
+  .form-check-input:focus {
+    box-shadow: none;
+  }
+
+</style>
+
+<h1 style="margin-top: 80px;">Reports</h1>
+<ul >
+  <li >
+    <a href="assets/jacoco/index.html" target="_blank">Jacoco</a>
+  </li>
+  <li >
+    <a href="http://localhost:9000/dashboard?id=cryptosurge&codeScope=overall" target="_blank">SonarQube</a>
+  </li>
+  <li >
+    <a href="assets/reports/apidocs/index.html" target="_blank">Javadocs</a>
+  </li>
+  <li >
+    <a href="assets/site/checkstyle.html" target="_blank">Checkstyle</a>
+  </li>
+  <li >
+    <a href="assets/dependency-check-report.html" target="_blank">Owasp</a>
+  </li>
+  <li >
+    <a href="assets/jmeter/index.html" target="_blank">JMeter</a>
+  </li>
+</ul>

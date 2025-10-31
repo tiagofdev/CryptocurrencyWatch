@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GLAbackend</a> &gt; <a href="index.source.html" class="el_package">io.github.tiagofdev.applicationgla.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package io.github.tiagofdev.applicationgla.controller;
+
+import io.github.tiagofdev.applicationgla.dto.Response;
+import io.github.tiagofdev.applicationgla.repository.UserEntityRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
+
+import static java.time.LocalDateTime.now;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.OK;
+
+
+@RestController
+@RequestMapping(&quot;/auth&quot;) // This is optional, all endpoints in this class will have path: auth/*
+public class AuthController {
+
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenManager tokenManager;
+    private final UserEntityRepository userEntityRepository;
+
+    public AuthController(AuthenticationManager authenticationManager, JwtTokenManager tokenManager,
+<span class="nc" id="L30">                          UserEntityRepository userEntityRepository) {</span>
+<span class="nc" id="L31">        this.authenticationManager = authenticationManager;</span>
+<span class="nc" id="L32">        this.tokenManager = tokenManager;</span>
+<span class="nc" id="L33">        this.userEntityRepository = userEntityRepository;</span>
+<span class="nc" id="L34">    }</span>
+
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;Response&gt; login(@RequestBody AuthRequest request) {
+        try {
+<span class="nc" id="L39">            Authentication authentication = authenticationManager.authenticate(</span>
+<span class="nc" id="L40">                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())</span>
+            );
+<span class="nc" id="L42">            String[] data = {tokenManager.generateToken(authentication.getName()), request.getUsername()};</span>
+<span class="nc" id="L43">            return ResponseEntity.ok(</span>
+<span class="nc" id="L44">                    Response.builder()</span>
+<span class="nc" id="L45">                            .timeStamp(now())</span>
+<span class="nc" id="L46">                            .status(OK)</span>
+<span class="nc" id="L47">                            .statusCode(OK.value())</span>
+<span class="nc" id="L48">                            .message(&quot;Success - Historical Retrieved&quot;)</span>
+<span class="nc" id="L49">                            .data(Map.of(&quot;results&quot;, data))</span>
+<span class="nc" id="L50">                            .build()</span>
+            );
+<span class="nc" id="L52">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L53">            System.out.println(e.getMessage());</span>
+        }
+<span class="nc" id="L55">        return ResponseEntity.badRequest().body(</span>
+<span class="nc" id="L56">                Response.builder()</span>
+<span class="nc" id="L57">                        .timeStamp(now())</span>
+<span class="nc" id="L58">                        .status(BAD_REQUEST)</span>
+<span class="nc" id="L59">                        .statusCode(BAD_REQUEST.value())</span>
+<span class="nc" id="L60">                        .message(&quot;e.getMessage()&quot;)</span>
+<span class="nc" id="L61">                        .build()</span>
+        );
+
+
+//        return tokenManager.generateToken(authentication.getName());
+    }
+
+
+
+    /*public void test() {
+        String password = &quot;mypassword&quot;;
+        PasswordEncoder passwordEncoder = new PasswordEncoder() {
+            @Override
+            public String encode(CharSequence rawPassword) {
+                try {
+                    MessageDigest messageDigest = MessageDigest.getInstance(&quot;SHA-256&quot;);
+                    byte[] hash = messageDigest.digest(rawPassword.toString().getBytes());
+                    return Base64.getEncoder().encodeToString(hash);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(&quot;Error encoding password&quot;, e);
+                }
+            }
+
+            @Override
+            public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                return encode(rawPassword).equals(encodedPassword);
+            }
+        };
+        String encodedPassword = passwordEncoder.encode(password);
+        System.out.println(&quot;Encoded Password: &quot; + encodedPassword);
+    }*/
+
+}
+
+<span class="nc" id="L95">class AuthRequest {</span>
+    private String username;
+    private String password;
+
+    public String getUsername() {
+<span class="nc" id="L100">        return username;</span>
+    }
+
+    public void setUsername(String username) {
+<span class="nc" id="L104">        this.username = username;</span>
+<span class="nc" id="L105">    }</span>
+
+    public String getPassword() {
+<span class="nc" id="L108">        return password;</span>
+    }
+
+    public void setPassword(String password) {
+<span class="nc" id="L112">        this.password = password;</span>
+<span class="nc" id="L113">    }</span>
+
+    // Getters and setters
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

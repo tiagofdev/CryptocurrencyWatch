@@ -1,0 +1,16 @@
+body {
+  background-color: #eafaf1; /* Light green background */
+  padding-top: 60px; /* Add padding to avoid content overlapping the navbar */
+}
+
+.navbar-custom {
+  background-color: #28a745; /* Green theme */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for a modern look */
+}
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+  color: white;
+}
+.navbar-custom .nav-link:hover {
+  color: #d4edda; /* Lighter green on hover */
+}

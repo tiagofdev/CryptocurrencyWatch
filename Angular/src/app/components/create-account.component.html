@@ -1,0 +1,94 @@
+<div class="container-fluid">
+  <div class="row justify-content-center align-items-center vh-100">
+    <!-- Create Account Section -->
+    <div class="col-lg-6 col-md-8 col-12">
+      <div class="create-account-container p-4 rounded shadow text-center">
+        <h3 class="text-primary mb-4"><i class="bi bi-person-plus"></i> Create Account</h3>
+        <form #createAccountForm="ngForm" (ngSubmit)="onRegister(createAccountForm)">
+          <!-- Full Name -->
+          <div class="mb-3 text-start">
+            <label for="username" class="form-label"><i class="bi bi-envelope"></i> Email Address</label>
+            <input type="text" class="form-control" id="username" name="username" ngModel=""
+                   placeholder="Enter your full name" required>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-3 text-start">
+            <label for="password" class="form-label"><i class="bi bi-lock"></i> Password</label>
+            <input type="password" class="form-control" id="password" name="password" ngModel=""
+                   placeholder="Create a password" required>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="mb-3 text-start">
+            <label for="confirmPassword" class="form-label"><i class="bi bi-lock-fill"></i> Confirm Password</label>
+            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" ngModel=""
+                   placeholder="Re-enter your password" required>
+          </div>
+
+          <!-- Terms and Conditions -->
+          <div class="mb-3 text-start">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="terms" name="terms" ngModel="" required>
+              <label class="form-check-label" for="terms">
+                I agree to the <a href="#" class="text-decoration-none">Terms and Conditions</a>
+              </label>
+            </div>
+          </div>
+
+          <!-- Create Account Button -->
+          <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-check"></i> Create Account</button>
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Already have an account -->
+        <p class="mb-0">Already have an account? <a href="#" class="text-decoration-none text-primary"><i
+          class="bi bi-box-arrow-in-right"></i> Login</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .create-account-container {
+    background-color: #ffffff; /* White background */
+    border-radius: 15px; /* Rounded corners */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    max-width: 500px; /* Limit the maximum width */
+    margin: auto; /* Center horizontally */
+    margin-top: 80px;
+  }
+
+  .create-account-container h3 {
+    color: #28a745; /* Green color for header */
+    font-weight: bold;
+  }
+
+  .form-control:focus {
+    border-color: #28a745; /* Green border on focus */
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.5); /* Green glow */
+  }
+
+  .btn-primary {
+    background-color: #28a745; /* Green button background */
+    border-color: #28a745; /* Green border */
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .btn-primary:hover {
+    background-color: #218838; /* Darker green on hover */
+    border-color: #1e7e34;
+  }
+
+  .text-primary {
+    color: #28a745 !important; /* Green text */
+  }
+
+  @media (max-width: 768px) {
+    .create-account-container {
+      padding: 20px;
+      max-width: 90%; /* Reduce width for mobile */
+    }
+  }
+</style>

@@ -1,0 +1,16 @@
+service: AngularGLA
+runtime: nodejs19
+
+instance_class: F2
+
+env_variables:
+  BUCKET_NAME: "angularGLA.tiagofeitosa.com"
+
+handlers:
+  - url: /.*
+    static_files: dist/my-angular-app/index.html
+    upload: dist/my-angular-app/index.html
+
+  - url: /
+    static_dir: dist/my-angular-app
+

@@ -1,0 +1,46 @@
+services:
+  backend:
+    build: .
+    container_name: GLAbackend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - database
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://database:3306/coincap
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "${MARIADB_PASSWORD}"
+
+  database:
+    image: mariadb:latest
+    container_name: maria
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MARIADB_PASSWORD}" # Ensure this is set in .env or your environment
+      MYSQL_DATABASE: coincap
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./mariadb/coincapData.sql:/docker-entrypoint-initdb.d/coincapData.sql
+
+
+  frontend:
+    build: ../GLAfrontend/
+    container_name: GLAfrontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ../GLAfrontend:/client # Adjust the path for compatibility with your host
+    command: >
+      /bin/sh -c "
+      apt-get update && 
+      apt-get install -y nodejs npm && 
+      cd /client && 
+      npm install && 
+      npm start
+      "
+
+volumes:
+  db-data:

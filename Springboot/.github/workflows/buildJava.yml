@@ -1,0 +1,185 @@
+name: GLAbackend-Continous-Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+jobs:
+  Test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:latest
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MARIADB_PASS }}
+          MYSQL_DATABASE: coincap
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      - name: Get current version
+        id: current_version
+        run: |
+          git fetch --tags
+          latest_tag=$(git describe --tags --abbrev=0 || echo "0.0.0")
+          echo "current_version=$latest_tag" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Increment version
+        id: increment_version
+        run: |
+          IFS='.' read -r major minor patch <<< "${current_version#v}"
+          patch=$((patch + 1))
+          new_version="v$major.$minor.$patch"
+          echo "new_version=$new_version" >> $GITHUB_ENV
+        env:
+          current_version: ${{ env.current_version }}
+
+      - name: Create new version tag
+        run: |
+          if git rev-parse ${{ env.new_version }} >/dev/null 2>&1; then
+            echo "Tag ${{ env.new_version }} already exists. Skipping tag creation."
+          else
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git tag ${{ env.new_version }}
+            git push origin ${{ env.new_version }}
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2
+
+      - name: Run Checkstyle Verification
+        run: mvn checkstyle:check
+
+      - name: Generate Checkstyle HTML Report
+        run: mvn checkstyle:checkstyle
+
+
+      - name: Run Tests - Surefire(Unit), JaCoco
+        run: mvn test
+
+      - name: Artifact JMeter results
+        uses: actions/upload-artifact@v3
+        with:
+          name: jmeter-results
+          path: result_file.jtl
+
+      - name: Artifact JMeter results
+        uses: actions/upload-artifact@v3
+        with:
+          name: jmeter-results
+          path: target/jmeter/results/
+
+      - name: Artifact Surefire reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+
+      - name: Artifact JaCoCo reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: jacoco-reports
+          path: target/site/jacoco/
+
+      - name: Generate Javadoc
+        run: mvn -B javadoc:javadoc
+
+      - name: Verify Build
+        run: mvn verify
+
+      - name: Store Reports on Main Branch
+        if: github.event.pull_request.merged == true
+        run: |
+          git config --global user.name 'github-actions'
+          git config --local user.email "actions@github.com"
+          git checkout main
+          mkdir -p reports/checkstyle
+          mkdir -p reports/surefire 
+          mkdir -p reports/sonarqube
+          mkdir -p reports/javadocs
+          mkdir -p reports/jacoco
+          cp -r target/reports/apidocs/* reports/javadocs
+          cp -r target/site/* reports/checkstyle
+          cp -r target/site/jacoco/* reports/jacoco
+          git add reports/
+          git commit -m 'Update Reports'
+          git push
+
+      - name: Ensure mvnw has execute permissions
+        run: chmod +x ./mvnw
+
+      - name: Build the GLAbackend application
+        run: |
+          ./mvnw clean install
+
+
+      - name: Start the application
+        run: |
+          nohup java -jar target/GLAbackend-0.0.1-SNAPSHOT.jar &
+        env:
+          DATABASE_URL: jdbc:mysql://localhost:3306/coincap
+          DATABASE_USER: root
+          SPRING_MAIL_HOST: smtp.gmail.com
+          SPRING_MAIL_PORT: 587
+          SPRING_MAIL_USERNAME: ${{ secrets.SPRING_MAIL_USERNAME }}
+          SPRING_MAIL_PASSWORD: ${{ secrets.SPRING_MAIL_PASSWORD }}
+
+      - name: Wait for the application to start
+        run: |
+          if curl -s http://localhost:8080/health | grep "UP"; then
+            echo "Service is Up!"
+          fi
+
+      - name: Install Apache JMeter
+        run: |
+          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xvzf apache-jmeter-5.6.3.tgz
+          sudo mv apache-jmeter-5.6.3 /opt/jmeter
+          echo "/opt/jmeter/bin" >> $GITHUB_PATH
+
+      - name: Run JMeter Test Non-GUI Mode
+        run: |
+          /opt/jmeter/bin/jmeter -n -t config/jmeter-test-plan.jmx -l target/jmeter/result_file.jtl
+          /opt/jmeter/bin/jmeter -g target/jmeter/result_file.jtl -o target/jmeter-html
+
+      - name: Store Reports on Main Branch
+        if: github.event.pull_request.merged == true
+        run: |
+          git config --global user.name 'github-actions'
+          git config --local user.email "actions@github.com"
+          git checkout main
+          mkdir -p reports/jmeter
+          cp -r target/jmeter/* reports/jmeter
+          cp -r target/jmeter-html/* reports/jmeter
+          git add reports/jmeter
+          git commit -m "Add JMeter test results"
+          git push
+

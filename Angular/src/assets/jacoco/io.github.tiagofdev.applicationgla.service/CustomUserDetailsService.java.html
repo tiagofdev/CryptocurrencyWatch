@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomUserDetailsService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GLAbackend</a> &gt; <a href="index.source.html" class="el_package">io.github.tiagofdev.applicationgla.service</a> &gt; <span class="el_source">CustomUserDetailsService.java</span></div><h1>CustomUserDetailsService.java</h1><pre class="source lang-java linenums">package io.github.tiagofdev.applicationgla.service;
+
+import io.github.tiagofdev.applicationgla.model.UserEntity;
+import io.github.tiagofdev.applicationgla.repository.UserEntityRepository;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    private final UserEntityRepository userEntityRepository;
+    private final PasswordEncoder passwordEncoder;
+
+<span class="nc" id="L18">    public CustomUserDetailsService(UserEntityRepository userEntityRepository, PasswordEncoder passwordEncoder) {</span>
+<span class="nc" id="L19">        this.passwordEncoder = passwordEncoder;</span>
+<span class="nc" id="L20">        this.userEntityRepository = userEntityRepository;</span>
+<span class="nc" id="L21">    }</span>
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+<span class="nc" id="L25">        UserEntity userEntity = userEntityRepository.findByUsername(username)</span>
+<span class="nc" id="L26">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;UserEntity not found&quot;));</span>
+
+<span class="nc" id="L28">        return User.builder()</span>
+<span class="nc" id="L29">                .username(userEntity.getUsername())</span>
+<span class="nc" id="L30">                .password(userEntity.getPassword())</span>
+<span class="nc" id="L31">                .build();</span>
+    }
+
+
+    public void createUser(String username, String plainPassword) {
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (userEntityRepository.findByUsername(username).isPresent()) {</span>
+<span class="nc" id="L37">            throw new IllegalArgumentException(&quot;Username already exists!&quot;);</span>
+        }
+
+        // Encrypt the password
+<span class="nc" id="L41">        String encodedPassword = passwordEncoder.encode(plainPassword);</span>
+
+        // Save the new user
+<span class="nc" id="L44">        UserEntity user = new UserEntity(username, encodedPassword);</span>
+<span class="nc" id="L45">        userEntityRepository.save(user);</span>
+<span class="nc" id="L46">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

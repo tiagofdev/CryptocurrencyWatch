@@ -1,0 +1,360 @@
+<style>
+  .info-box {
+    background-color: #ffd700; /* Green theme */
+    color: rgba(0, 0, 0, 0.64);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding-top: 40px;
+    margin-bottom: 12px;
+  }
+
+  .info-box h4 {
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .info-box .highlight {
+    color: #ffd100; /* Gold as a highlight color */
+  }
+
+  .label {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .tab-content {
+    margin-top: 20px;
+  }
+
+  .btn-radio .btn {
+    border-radius: 4px; /* Ensure buttons look like tabs */
+    margin-right: 8px;
+  }
+
+  .btn-radio .btn.active {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #fff;
+  }
+
+  .form-check-label {
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .form-check-input:disabled ~ input {
+    opacity: 0.5;
+    background-color: #cccccc;
+  }
+
+  .btn-outline-success:hover, .btn-outline-success:focus {
+    background-color: gold;
+    border-color: gold;
+    color: #000;
+  }
+
+  .form-check-input {
+    width: 2em;
+    height: 1em;
+    background-color: #ccc;
+    border-radius: 1em;
+    transition: background-color 0.3s;
+
+  }
+
+  .form-check-input:checked {
+    background-color: #28A745FF;
+  }
+
+  .form-check-input:focus {
+    box-shadow: none;
+  }
+
+</style>
+
+
+<div class="container-fluid py-4">
+  <!-- Info Box -->
+  <div class="container info-box text-center" [style.background]="gradient">
+    <div class="row">
+      <div class="col-md-2 col-6">
+        <div class="label">Name</div>
+        <div class="value" id="cryptoName">{{filteredCurrency.name}} ({{filteredCurrency.symbol}})</div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="label">Price USd</div>
+        <div class="value" id="cryptoSymbol">${{currentPrice}}</div>
+<!--        <div class="value"  *ngIf="filteredPrices[filteredPrices.length-1].priceUsd !== undefined &&-->
+<!--        filteredPrices[filteredPrices.length-1].priceUsd !== null">{{ filteredPrices[filteredPrices.length-1].priceUsd }}</div>-->
+<!--        <div class="value"  *ngIf="filteredPrices[filteredPrices.length-1].priceUsd === undefined ||-->
+<!--         filteredPrices[filteredPrices.length-1].priceUsd === null">Loading...</div>-->
+
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="label">Volume 24H</div>
+        <div class="value" id="cryptoMarketCap">{{volume24h}}</div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="label">Supply</div>
+        <div class="value" id="cryptoSupply">{{supply}}</div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="label">Market Cap</div>
+        <div class="value" id="cryptoChange">{{marketCap}}</div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="label">Explore</div>
+        <div class="value" id="cryptoWebsite">
+          <button class="btn btn-outline-success"><a href="{{filteredCurrency.explorer}}" target="_blank"
+          >WEBSITE</a> </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Currency Selector -->
+  <div class="d-flex mb-4">
+    <ng-container *ngIf=" (currencies$ | async) as app_state" [ngSwitch]="app_state.dataState">
+
+    <select class="form-select me-2" id="currencyDropdown" [(ngModel)]="optionSelectedCurrency" (ngModelChange)="updateDataSelectedCurrency()">
+      <option *ngFor="let option of app_state.response?.data?.results; let i = index" [value]="option.name">
+        {{ option.name }}
+      </option>
+    </select>
+    <input type="text" class="form-control" id="currencySearch" placeholder="Search for a currency..."
+           [(ngModel)]="searchText">
+    </ng-container>
+  </div>
+
+  <!-- Tabs -->
+
+  <div class="container">
+    <div class="row">
+      <!-- Parent div with flex utility -->
+      <div class="col-12 d-flex flex-column flex-md-row justify-content-between">
+        <!-- Left aligned child div -->
+        <div class="left">
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" data-bs-toggle="tab" href="#history" role="tab"
+                 (click)="optionSelectedTab = 'history'">History</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#projections" role="tab"
+                 (click)="optionSelectedTab = 'projections'; getProjections()">Projections</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#alerts" role="tab"
+                 (click)="optionSelectedTab = 'alerts'; hasAlertForSelectedCurrency()">Alerts</a>
+            </li>
+          </ul>
+        </div>
+        <!-- Right aligned child div -->
+        <div class="right d-flex align-items-center" style="width: 340px;">
+          <div class="row d-flex align-items-center align-middle" style="padding-top:8px;">
+            <div class="col-6 col-md-3">
+              <p>Average:</p>
+            </div>
+            <div class="col-6 col-md-3 d-flex">
+              <p>${{average}}</p>
+            </div>
+            <div class="col-6 col-md-3 d-flex">
+              <p>Change:</p>
+            </div>
+            <div class="col-6 col-md-3 d-flex">
+              <p>{{percentage}}%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- History Tab -->
+      <div class="tab-pane fade show active" id="history" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <!-- Graph Type Radio Buttons -->
+          <div class="btn-radio" role="group" aria-label="Graph Type">
+            <input type="radio" class="btn-check" name="graphType" id="curve" autocomplete="off" value="curve" checked
+                   [(ngModel)]="optionSelectedGraph" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="curve">Curve</label>
+
+            <input type="radio" class="btn-check" name="graphType" id="barplot" autocomplete="off" value="barplot"
+                   [(ngModel)]="optionSelectedGraph" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="barplot">BarPlot</label>
+
+            <input type="radio" class="btn-check" name="graphType" id="candlestick" autocomplete="off" value="candlestick"
+                   [(ngModel)]="optionSelectedGraph" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="candlestick">Candlestick</label>
+
+          </div>
+
+          <!-- Graph Range -->
+          <div class="btn-radio" role="group" aria-label="Graph Range">
+            <input type="radio" class="btn-check" name="groupRange" id="1h" autocomplete="off" value="1h"
+                   [(ngModel)]="optionSelectedRange" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="1h">1H</label>
+            <input type="radio" class="btn-check" name="groupRange" id="24h" autocomplete="off" value="24h" checked
+                   [(ngModel)]="optionSelectedRange" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="24h">24H</label>
+            <input type="radio" class="btn-check" name="groupRange" id="1w" autocomplete="off" value="1w"
+                   [(ngModel)]="optionSelectedRange" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="1w">1W</label>
+            <input type="radio" class="btn-check" name="groupRange" id="1m" autocomplete="off" value="1m"
+                   [(ngModel)]="optionSelectedRange" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="1m">1M</label>
+            <input type="radio" class="btn-check" name="groupRange" id="1y" autocomplete="off" value="1y"
+                   [(ngModel)]="optionSelectedRange" (ngModelChange)="updateGraph()">
+            <label class="btn btn-outline-success" for="1y">1Y</label>
+          </div>
+        </div>
+        <!-- Graph-->
+        <div id="graphDiv" style="height: 400px; background-color: #f8f9fa; border-radius: 10px;">
+          <!-- Placeholder for D3.js Graph -->
+
+          <svg></svg>
+
+          <ng-container *ngIf="graph == null || graph == undefined">
+            <p class="text-center py-5">Graph unavailable...</p>
+          </ng-container>
+
+        </div>
+      </div>
+
+      <!-- Projections Tab -->
+      <div class="tab-pane fade" id="projections" role="tabpanel">
+
+        <!-- Graph Type Radio Buttons -->
+        <div class="btn-radio" role="group" aria-label="Projections Type">
+          <input type="radio" class="btn-check" name="projType" id="sma" autocomplete="off" value="sma" checked
+                 [(ngModel)]="optionSelectedProjection" (ngModelChange)="getProjections()">
+          <label class="btn btn-outline-success" for="sma">Simple Moving Average</label>
+          <input type="radio" class="btn-check" name="projType" id="lregression" autocomplete="off" value="lregression"
+                 [(ngModel)]="optionSelectedProjection" (ngModelChange)="getProjections()">
+          <label class="btn btn-outline-success" for="lregression">Linear Regression</label>
+
+        </div>
+
+        <div id="projectionsGraph" style="height: 400px; background-color: #f8f9fa; border-radius: 10px;">
+          <svg id="svgProj"></svg>
+          <ng-container *ngIf="graph == null || graph == undefined">
+            <p class="text-center py-5">Graph unavailable...</p>
+          </ng-container>
+        </div>
+
+      </div>
+
+      <!-- Alerts Tab -->
+      <div class="tab-pane fade" id="alerts" role="tabpanel" style="width: 440px;">
+
+        <form #formSubscription="ngForm" (ngSubmit)="subscribeAlerts(formSubscription)">
+        <div class="row g-3 d-flex align-items-center">
+
+          <!--        Subscribe-->
+          <div class="row mb-3 mt-3">
+
+            <div class="col-11 d-flex justify-content-end">
+              <label for="subscribe" class="form-check-label ml-auto">Subscribe</label>
+            </div>
+
+            <div class="col-1 d-flex align-items-center">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="subscribe" name="subscribe"
+                       ngModel [(ngModel)]="subscribed">
+              </div>
+            </div>
+
+          </div>
+
+
+          <div [innerHTML]="alertMsg">
+
+          </div>
+
+
+
+          <!--        Radio Button - Criteria -->
+
+          <div class="btn-radio mb-3" role="group" aria-label="Criteria">
+            <div class="row mb-3" style="padding-bottom: 8px; padding-top: 20px; border-bottom: solid 1px yellow;
+                border-top: solid 1px yellow;">
+
+              <div class="col-6 d-flex align-items-center">
+                <input type="radio" class="btn-check" name="criteria" id="priceThreshold" autocomplete="off"
+                       [(ngModel)]="optionSelectedCriteria" value="priceThreshold" checked>
+                <label class="btn btn-outline-success" for="priceThreshold"><i class="bi bi-activity"></i></label>
+                <div>
+                  Price Threshold
+                </div>
+              </div>
+              <div class="col-6 d-flex align-items-center">
+                <input type="radio" class="btn-check" name="criteria" id="percentageChange" autocomplete="off"
+                       [(ngModel)]="optionSelectedCriteria" value="percentageChange">
+                <label class="btn btn-outline-success" for="percentageChange"><i class="bi bi-percent"></i></label>
+                <div>
+                  Percentage Change 24H
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mb-3" style="padding-bottom: 8px; border-bottom: solid 1px yellow;" >
+
+            <div class="col-5 d-flex align-items-center text-center">
+              <div class="text-center" *ngIf="optionSelectedCriteria === 'priceThreshold'">Price Threshold</div>
+              <div class="text-center" *ngIf="optionSelectedCriteria === 'percentageChange'">Percentage Change</div>
+            </div>
+            <div class="col-4 d-flex align-items-center">
+              <div class="btn-radio" role="group" aria-label="Operator Type">
+                <input type="radio" class="btn-check" name="operator" id="greaterThan" autocomplete="off"
+                       [(ngModel)]="optionSelectedOperator" value="greaterThan" checked>
+                <label class="btn btn-outline-success" for="greaterThan">&gt;</label>
+                <input  type="radio" class="btn-check" name="operator" id="lessThan" autocomplete="off"
+                       [(ngModel)]="optionSelectedOperator" value="lessThan">
+                <label class="btn btn-outline-success" for="lessThan">&lt;</label>
+              </div>
+            </div>
+
+            <div class="col-3 d-flex align-items-center justify-content-end">
+              <input  type="number"   id="priceValue" name="priceValue" placeholder="Enter price"
+                      [(ngModel)]="priceValue" style="width: 100px;">
+            </div>
+
+          </div>
+
+<!--          [disabled]="optionSelectedCriteria !== 'changePercentage'" -->
+
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-success">Save</button>
+          </div>
+        </div>
+        </form>
+
+    </div>
+    </div>
+  </div>
+
+<!--  <button class="btn btn-outline-success" (click)="testEmail()">Test email</button>-->
+
+</div>
+
+
+<!-- D3.js -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+  // Enable/Disable input boxes based on checkbox state
+  document.getElementById('priceThreshold').addEventListener('change', function () {
+    document.getElementById('priceValue').disabled = !this.checked;
+  });
+
+  document.getElementById('percentageThreshold').addEventListener('change', function () {
+    document.getElementById('percentageValue').disabled = !this.checked;
+  });
+
+  // Placeholder for D3.js graph rendering
+  // Add your graph logic here
+</script>

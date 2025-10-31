@@ -1,0 +1,33 @@
+services:
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  maven:
+    image: amazoncorretto:17
+    container_name: maven-runner
+    depends_on:
+      sonarqube:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - ~/.m2:/root/.m2
+    working_dir: /app
+    entrypoint: ["/bin/bash", "-c"]
+    command: |
+      apt-get update && apt-get install -y maven && \
+      mvn -version && \
+      mvn clean verify sonar:sonar \
+      -Dsonar.projectKey=cryptosurge \
+      -Dsonar.projectName="cryptosurge" \
+      -Dsonar.host.url=http://sonarqube:9000 \
+      -Dsonar.login=sqp_152a67a920fba399c9d95e7c121995a1a89f160a

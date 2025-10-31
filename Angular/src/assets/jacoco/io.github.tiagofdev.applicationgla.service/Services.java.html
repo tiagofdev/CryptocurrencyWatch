@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Services.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GLAbackend</a> &gt; <a href="index.source.html" class="el_package">io.github.tiagofdev.applicationgla.service</a> &gt; <span class="el_source">Services.java</span></div><h1>Services.java</h1><pre class="source lang-java linenums">package io.github.tiagofdev.applicationgla.service;
+
+import io.github.tiagofdev.applicationgla.model.HistoricalEntity;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.Arrays.stream;
+
+@RequiredArgsConstructor
+@Service
+@Transactional
+<span class="nc" id="L18">@Slf4j</span>
+public class Services implements IServices {
+
+
+
+
+
+    /**
+     * Method to calculate Simple Moving Average (SMA) with BigDecimal AND
+     * Exponential Moving Average (EMA)
+     * @param historicalEntities
+     * @param name
+     * @return
+     */
+    public List&lt;List&lt;BigDecimal&gt;&gt; getForecastSMA(List&lt;HistoricalEntity&gt; historicalEntities, String name) {
+         // Fixed window size for SMA
+<span class="nc" id="L34">        int smaForecastDays = 31;</span>
+<span class="nc" id="L35">        int emaForecastDays = 4;</span>
+<span class="nc" id="L36">        List&lt;HistoricalEntity&gt; filteredEntities = historicalEntities.stream()</span>
+<span class="nc" id="L37">                .filter(historicalEntity -&gt; historicalEntity.getName().equals(name))</span>
+<span class="nc" id="L38">                .toList();</span>
+
+<span class="nc" id="L40">        List&lt;BigDecimal&gt; prices = filteredEntities.stream().map(HistoricalEntity::getClosePrice).toList();</span>
+<span class="nc" id="L41">        int period = prices.size();</span>
+<span class="nc" id="L42">        int period3 = 7;</span>
+<span class="nc" id="L43">        List&lt;BigDecimal&gt; sma = new ArrayList&lt;&gt;();</span>
+
+
+
+<span class="nc" id="L47">        BigDecimal previousEMA = filteredEntities.get(0).getClosePrice(); // Start EMA with the first price</span>
+
+        // Calculate historical SMA
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        for (int i = 0; i &lt; prices.size(); i++) {</span>
+            // SMA
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            if (i &lt; period - 1) {</span>
+<span class="nc" id="L53">                sma.add(null); // Not enough data points to calculate SMA</span>
+            } else {
+<span class="nc" id="L55">                BigDecimal sum = BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                for (int j = i; j &gt; i - period; j--) {</span>
+<span class="nc" id="L57">                    sum = sum.add(prices.get(j));</span>
+                }
+<span class="nc" id="L59">                sma.add(sum.divide(BigDecimal.valueOf(period), RoundingMode.HALF_UP));</span>
+            }
+
+
+        }
+
+<span class="nc" id="L65">        List&lt;BigDecimal&gt; forecastSma = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L66">        List&lt;BigDecimal&gt; forecastEma = new ArrayList&lt;&gt;();</span>
+
+        // Forecast SMA for the next `forecastDays`
+<span class="nc" id="L69">        List&lt;BigDecimal&gt; forecastPrices = new ArrayList&lt;&gt;(prices);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (int i = 0; i &lt; smaForecastDays; i++) {</span>
+            // Assume the forecast price is the last EMA (or modify this logic for better prediction)
+<span class="nc" id="L72">            BigDecimal forecastPrice = previousEMA;</span>
+<span class="nc" id="L73">            forecastPrices.add(forecastPrice);</span>
+
+            // SMA forecast
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (forecastPrices.size() &gt;= period) {</span>
+<span class="nc" id="L77">                BigDecimal smaSum = BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                for (int j = forecastPrices.size() - 1; j &gt;= forecastPrices.size() - period; j--) {</span>
+<span class="nc" id="L79">                    smaSum = smaSum.add(forecastPrices.get(j));</span>
+                }
+<span class="nc" id="L81">                forecastSma.add(smaSum.divide(BigDecimal.valueOf(period), RoundingMode.HALF_UP));</span>
+<span class="nc" id="L82">            } else {</span>
+<span class="nc" id="L83">                forecastSma.add(null);</span>
+            }
+        }
+
+
+<span class="nc" id="L88">        forecastPrices = new ArrayList&lt;&gt;(prices);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        for (int i = 0; i &lt; emaForecastDays; i++) {</span>
+            // Assume the forecast price is the last EMA (or modify this logic for better prediction)
+<span class="nc" id="L91">            BigDecimal forecastPrice = previousEMA;</span>
+<span class="nc" id="L92">            forecastPrices.add(forecastPrice);</span>
+
+            // SMA forecast
+<span class="nc bnc" id="L95" title="All 2 branches missed.">            if (forecastPrices.size() &gt;= period3) {</span>
+<span class="nc" id="L96">                BigDecimal smaSum = BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                for (int j = forecastPrices.size() - 1; j &gt;= forecastPrices.size() - period3; j--) {</span>
+<span class="nc" id="L98">                    smaSum = smaSum.add(forecastPrices.get(j));</span>
+                }
+<span class="nc" id="L100">                forecastEma.add(smaSum.divide(BigDecimal.valueOf(period3), RoundingMode.HALF_UP));</span>
+<span class="nc" id="L101">            } else {</span>
+<span class="nc" id="L102">                forecastEma.add(null);</span>
+            }
+        }
+
+
+
+<span class="nc" id="L108">        List&lt;List&lt;BigDecimal&gt;&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L109">        result.add(forecastSma); // forecast SMA</span>
+<span class="nc" id="L110">        result.add(forecastEma); // forecast EMA</span>
+<span class="nc" id="L111">        return result;</span>
+    }
+
+    // Method to calculate linear regression coefficients (slope and intercept)
+    private double[] calculateLinearRegression(List&lt;BigDecimal&gt; data) {
+<span class="nc" id="L116">        int n = data.size();</span>
+
+        // Calculate sums needed for linear regression
+<span class="nc" id="L119">        double sumX = 0.0;</span>
+<span class="nc" id="L120">        double sumY = 0.0;</span>
+<span class="nc" id="L121">        double sumXY = 0.0;</span>
+<span class="nc" id="L122">        double sumX2 = 0.0;</span>
+
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        for (int i = 0; i &lt; n; i++) {</span>
+<span class="nc" id="L125">            double x = i; // Using the index as the time variable</span>
+<span class="nc" id="L126">            double y = data.get(i).doubleValue(); // Data value</span>
+
+<span class="nc" id="L128">            sumX += x;</span>
+<span class="nc" id="L129">            sumY += y;</span>
+<span class="nc" id="L130">            sumXY += x * y;</span>
+<span class="nc" id="L131">            sumX2 += x * x;</span>
+        }
+
+        // Calculate slope (m) and intercept (b) using the formulas
+<span class="nc" id="L135">        double m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);</span>
+<span class="nc" id="L136">        double b = (sumY - m * sumX) / n;</span>
+
+<span class="nc" id="L138">        return new double[]{m, b};</span>
+    }
+
+    // Method to forecast future values based on linear regression
+    public List&lt;BigDecimal&gt; getProjectionsLRegression(List&lt;HistoricalEntity&gt; historicalEntities, String name) {
+<span class="nc" id="L143">        int forecastDays = 8;</span>
+
+
+<span class="nc" id="L146">        List&lt;HistoricalEntity&gt; filteredEntities = historicalEntities.stream()</span>
+<span class="nc" id="L147">                .filter(historicalEntity -&gt; historicalEntity.getName().equals(name))</span>
+<span class="nc" id="L148">                .toList();</span>
+
+<span class="nc" id="L150">        List&lt;BigDecimal&gt; prices = filteredEntities.stream().map(HistoricalEntity::getClosePrice).toList();</span>
+
+        // Step 1: Calculate linear regression coefficients (slope and intercept)
+<span class="nc" id="L153">        double[] regressionParams = calculateLinearRegression(prices);</span>
+<span class="nc" id="L154">        double slope = regressionParams[0];</span>
+<span class="nc" id="L155">        double intercept = regressionParams[1];</span>
+
+        // Step 2: Generate forecasts for the next 'forecastDays'
+<span class="nc" id="L158">        List&lt;BigDecimal&gt; forecastedValues = new ArrayList&lt;&gt;();</span>
+
+        // Start forecasting from the next day after the last data point
+<span class="nc" id="L161">        int startDay = prices.size();</span>
+
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        for (int t = startDay; t &lt; startDay + forecastDays; t++) {</span>
+            // Apply the linear regression formula to predict the future value
+<span class="nc" id="L165">            double forecastValue = slope * t + intercept;</span>
+            // Convert the forecast value to BigDecimal and add to the forecast list
+<span class="nc" id="L167">            forecastedValues.add(BigDecimal.valueOf(forecastValue).setScale(2, RoundingMode.HALF_UP));</span>
+        }
+
+<span class="nc" id="L170">        return forecastedValues;</span>
+    }
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

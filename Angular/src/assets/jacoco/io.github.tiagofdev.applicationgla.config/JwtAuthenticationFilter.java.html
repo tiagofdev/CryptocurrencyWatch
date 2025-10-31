@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtAuthenticationFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GLAbackend</a> &gt; <a href="index.source.html" class="el_package">io.github.tiagofdev.applicationgla.config</a> &gt; <span class="el_source">JwtAuthenticationFilter.java</span></div><h1>JwtAuthenticationFilter.java</h1><pre class="source lang-java linenums">package io.github.tiagofdev.applicationgla.config;
+
+import io.github.tiagofdev.applicationgla.controller.JwtAuthenticationToken;
+import io.github.tiagofdev.applicationgla.controller.JwtTokenManager;
+import io.github.tiagofdev.applicationgla.service.CustomUserDetailsService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtTokenManager tokenManager;
+    private final CustomUserDetailsService userDetailsService;
+
+
+<span class="nc" id="L25">    public JwtAuthenticationFilter(JwtTokenManager tokenManager, CustomUserDetailsService userDetailsService) {</span>
+<span class="nc" id="L26">        this.tokenManager = tokenManager;</span>
+<span class="nc" id="L27">        this.userDetailsService = userDetailsService;</span>
+<span class="nc" id="L28">    }</span>
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+
+<span class="nc" id="L34">        final String authHeader = request.getHeader(&quot;Authorization&quot;);</span>
+<span class="nc" id="L35">        System.out.println(&quot;custom filter*****************&quot;);</span>
+
+
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        if (request.getRequestURI().equals(&quot;/register&quot;) || request.getRequestURI().equals(&quot;/auth/login&quot;) ||</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">                request.getRequestURI().equals(&quot;/actuator/**&quot;)) {</span>
+<span class="nc" id="L40">            chain.doFilter(request, response);  // Skip this filter for these endpoints</span>
+
+<span class="nc" id="L42">            String uri = request.getRequestURI();</span>
+<span class="nc" id="L43">            System.out.println(&quot;Filtering request: &quot; + uri);</span>
+<span class="nc" id="L44">            System.out.println(&quot;local port: &quot; + request.getLocalPort());</span>
+<span class="nc" id="L45">            System.out.println(&quot;server name: &quot; + request.getServerName());</span>
+<span class="nc" id="L46">            HttpServletRequest servlet = (HttpServletRequest) request;</span>
+<span class="nc" id="L47">            System.out.println(&quot;method Name: &quot; + servlet.getMethod());</span>
+<span class="nc" id="L48">            System.out.println(&quot;request uri: &quot; + servlet.getRequestURI());</span>
+<span class="nc" id="L49">            System.out.println(&quot;request url: &quot; + servlet.getRequestURL());</span>
+<span class="nc" id="L50">            System.out.println(&quot;servet path: &quot; + servlet.getServletPath());</span>
+<span class="nc" id="L51">            return;</span>
+        }
+
+
+<span class="nc bnc" id="L55" title="All 4 branches missed.">        if (authHeader == null || !authHeader.startsWith(&quot;Bearer &quot;)) {</span>
+<span class="nc" id="L56">            chain.doFilter(request, response);</span>
+<span class="nc" id="L57">            return;</span>
+        }
+
+<span class="nc" id="L60">        final String token = authHeader.substring(7);</span>
+<span class="nc" id="L61">        final String username = tokenManager.extractUsername(token);</span>
+
+<span class="nc bnc" id="L63" title="All 4 branches missed.">        if (username != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {</span>
+<span class="nc" id="L64">            UserDetails userDetails = userDetailsService.loadUserByUsername(username);</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            if (tokenManager.isTokenValid(token, userDetails.getUsername())) {</span>
+<span class="nc" id="L67">                var authentication = new JwtAuthenticationToken(userDetails);</span>
+<span class="nc" id="L68">                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));</span>
+<span class="nc" id="L69">                SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+            }
+        }
+
+<span class="nc" id="L73">        chain.doFilter(request, response);</span>
+<span class="nc" id="L74">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

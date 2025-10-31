@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Collector.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GLAbackend</a> &gt; <a href="index.source.html" class="el_package">io.github.tiagofdev.applicationgla.service</a> &gt; <span class="el_source">Collector.java</span></div><h1>Collector.java</h1><pre class="source lang-java linenums">package io.github.tiagofdev.applicationgla.service;
+
+import io.github.tiagofdev.applicationgla.dto.CurrencyResponse;
+import io.github.tiagofdev.applicationgla.dto.HistoricalResponse;
+import io.github.tiagofdev.applicationgla.dto.PriceResponse;
+import io.github.tiagofdev.applicationgla.model.*;
+import io.github.tiagofdev.applicationgla.repository.CurrencyEntityRepository;
+import io.github.tiagofdev.applicationgla.repository.HistoricalEntityRepository;
+import io.github.tiagofdev.applicationgla.repository.PriceEntityRepository;
+import io.github.tiagofdev.applicationgla.service.ServiceAlert;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Collects and calls price monitor every 60 seconds
+ */
+@Service
+@Component
+public class Collector {
+
+    // This is used to contact external API
+    private final RestTemplate restTemplate;
+    private final ServiceAlert serviceAlert;
+
+    private final PriceEntityRepository priceEntityRepository;
+    private final HistoricalEntityRepository historicalEntityRepository;
+    private final CurrencyEntityRepository currencyEntityRepository;
+
+    // Constructor injection (recommended)
+    @Autowired
+    public Collector(PriceEntityRepository priceEntityRepository, HistoricalEntityRepository historicalEntityRepository,
+<span class="nc" id="L46">                     CurrencyEntityRepository currencyEntityRepository, ServiceAlert serviceAlert) {</span>
+<span class="nc" id="L47">        this.priceEntityRepository = priceEntityRepository;</span>
+<span class="nc" id="L48">        this.historicalEntityRepository = historicalEntityRepository;</span>
+<span class="nc" id="L49">        this.restTemplate = new RestTemplate();</span>
+<span class="nc" id="L50">        this.currencyEntityRepository = currencyEntityRepository;</span>
+<span class="nc" id="L51">        this.serviceAlert = serviceAlert;</span>
+<span class="nc" id="L52">    }</span>
+
+    /**
+     * This method is run every 60 seconds.
+     * It collects only the price at the current time.
+     * It saves the data as PriceEntity to the DB.
+     */
+    @Scheduled(fixedRate = 1800000) // Run every 60 seconds
+    public void fetchAndStoreData() {
+<span class="nc" id="L61">        String url = &quot;https://api.coincap.io/v2/assets&quot;; // CoinCap API endpoint</span>
+        try {
+            // Fetch data from API
+<span class="nc" id="L64">            PriceResponse response = restTemplate.getForObject(url, PriceResponse.class);</span>
+
+<span class="nc bnc" id="L66" title="All 4 branches missed.">            if (response != null &amp;&amp; response.getData() != null) {</span>
+<span class="nc" id="L67">                response.getData().forEach(asset -&gt; {</span>
+<span class="nc" id="L68">                    PriceEntity priceEntity = new PriceEntity();</span>
+<span class="nc" id="L69">                    priceEntity.setName(asset.getName());</span>
+<span class="nc" id="L70">                    priceEntity.setPriceUsd(new BigDecimal(asset.getPriceUsd()));</span>
+<span class="nc" id="L71">                    priceEntity.setCollectedAt(LocalDateTime.now());</span>
+<span class="nc" id="L72">                    savePriceEntity(priceEntity);</span>
+<span class="nc" id="L73">                    serviceAlert.checkAlerts(priceEntity);</span>
+<span class="nc" id="L74">                });</span>
+            }
+<span class="nc" id="L76">        } catch (Exception e) {</span>
+<span class="nc" id="L77">            System.err.println(&quot;Error fetching data: &quot; + e.getMessage());</span>
+<span class="nc" id="L78">            e.printStackTrace();  // Better logging of the exception</span>
+<span class="nc" id="L79">        }</span>
+<span class="nc" id="L80">    }</span>
+
+<span class="nc" id="L82">    int increment = 1;</span>
+    /**
+     * This calls the fetch historical data method every X seconds.
+     * I have to limit the number of calls I make because the server API
+     * only accepts 429 requests per minute
+     * I could only go as far as 3 months in the past
+     */
+//        @Scheduled(fixedRate = 60000)
+//    @PostConstruct
+    public void eviferyMinuteGet() {
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if ( increment &lt; 2 ) {</span>
+<span class="nc" id="L93">            fetchAndStoreHistoricalData();</span>
+<span class="nc" id="L94">            increment += 1;</span>
+<span class="nc" id="L95">            System.out.println(&quot;increment: &quot; + increment);</span>
+        }
+
+<span class="nc" id="L98">    }</span>
+
+    /**
+     * Cryptocoin markets do not have an opening and closing time.
+     * This method is supposed to run once a day, ideally by the end of the day, so that we get the highest number of
+     * data collected from the day. This will enable to collect the open price, a close price, the highest price, and
+     * the lowest price.
+     * The data is saved as HistoricalEntity to the DB.
+     */
+//    @PostConstruct
+    public void fetchAndStoreHistoricalData() {
+<span class="nc" id="L109">        String baseUrl = &quot;https://api.coincap.io/v2/assets&quot;; // CoinCap API endpoint</span>
+<span class="nc" id="L110">        LocalDate today = LocalDate.now(ZoneOffset.UTC);</span>
+
+//        long end = today.atTime(23, 59, 59).toInstant(ZoneOffset.UTC).toEpochMilli();
+//        long start = today.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+<span class="nc" id="L114">        LocalDate theDate = LocalDate.now(ZoneOffset.UTC).minus(increment , ChronoUnit.DAYS);</span>
+<span class="nc" id="L115">        long end = theDate.atTime(23, 59, 59).toInstant(ZoneOffset.UTC).toEpochMilli();</span>
+<span class="nc" id="L116">        long start = theDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();</span>
+
+        try { // Fetch list of all assets
+<span class="nc" id="L119">            HistoricalResponse response = restTemplate.getForObject(baseUrl, HistoricalResponse.class);</span>
+<span class="nc bnc" id="L120" title="All 4 branches missed.">            if (response != null &amp;&amp; response.getData() != null) {</span>
+<span class="nc" id="L121">                response.getData().forEach(asset -&gt; {</span>
+<span class="nc" id="L122">                    System.out.println(asset.getName());</span>
+<span class="nc" id="L123">                    System.out.println(theDate);</span>
+<span class="nc" id="L124">                    System.out.println(asset.getVolumeUsd24Hr());</span>
+<span class="nc" id="L125">                    System.out.println();</span>
+<span class="nc" id="L126">                    String assetId = asset.getId();</span>
+                    // With history, they only provide price, that's it
+<span class="nc" id="L128">                    String url = String.format(&quot;https://api.coincap.io/v2/assets/%s/history?interval=h1&amp;start=%s&amp;end=%s&quot;, assetId, start, end);</span>
+
+                    // Fetch Response for historical data for each asset
+<span class="nc" id="L131">                    HistoricalResponse historicalResponse = restTemplate.getForObject(url, HistoricalResponse.class);</span>
+                    // If we get a valid response
+<span class="nc bnc" id="L133" title="All 4 branches missed.">                    if (historicalResponse != null &amp;&amp; historicalResponse.getData() != null) {</span>
+                        // new HistoricalEntity
+<span class="nc" id="L135">                        HistoricalEntity historicalEntity = new HistoricalEntity();</span>
+                        // First let's check if there is already a HistoricalEntity with the name-date combination
+<span class="nc" id="L137">                        Optional&lt;HistoricalEntity&gt; existingEntity = historicalEntityRepository.findByNameAndDate(asset.getName(), theDate);</span>
+                        // If there is, we are only going to update the existing entry
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                        if (existingEntity.isPresent()) {</span>
+<span class="nc" id="L140">                            historicalEntity = existingEntity.get();</span>
+                        } else { // Otherwise, create a new entry with the name-date combination
+<span class="nc" id="L142">                            historicalEntity.setName(asset.getName());</span>
+<span class="nc" id="L143">                            historicalEntity.setDate(theDate);</span>
+                        }
+<span class="nc" id="L145">                        historicalEntity.setVolumeUsd24Hr(new BigDecimal(asset.getVolumeUsd24Hr()));</span>
+<span class="nc" id="L146">                        historicalEntity.setSupply(new BigDecimal(asset.getSupply()));</span>
+                        // We're going to extract the price list from today
+<span class="nc" id="L148">                        List&lt;BigDecimal&gt; bigDecimals = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L149">                        historicalResponse.getData().forEach(historicalAsset -&gt; {</span>
+<span class="nc" id="L150">                            bigDecimals.add(new BigDecimal(historicalAsset.getPriceUsd()));</span>
+<span class="nc" id="L151">                        });</span>
+                        // Calculate max and min
+<span class="nc" id="L153">                        Optional&lt;BigDecimal&gt; max = bigDecimals.stream().max(BigDecimal::compareTo);</span>
+<span class="nc" id="L154">                        Optional&lt;BigDecimal&gt; min = bigDecimals.stream().min(BigDecimal::compareTo);</span>
+<span class="nc" id="L155">                        max.ifPresent(historicalEntity::setHighPrice); // Output: 20.75</span>
+<span class="nc" id="L156">                        min.ifPresent(historicalEntity::setLowPrice);</span>
+                        // OpenPrice should be the first item on the list
+<span class="nc" id="L158">                        historicalEntity.setOpenPrice(bigDecimals.get(0));</span>
+                        // ClosePrice should be the last item on the list
+<span class="nc" id="L160">                        historicalEntity.setClosePrice(bigDecimals.get(bigDecimals.size()-1));</span>
+                        // Save or Update the HistoricalEntity
+<span class="nc" id="L162">                        saveHistoricalEntity(historicalEntity);</span>
+                    }
+<span class="nc" id="L164">                });</span>
+            }
+<span class="nc" id="L166">        } catch (Exception e) {</span>
+<span class="nc" id="L167">            System.err.println(&quot;Error fetching historical data: &quot; + e.getMessage());</span>
+<span class="nc" id="L168">            e.printStackTrace(); // Better logging of the exception</span>
+<span class="nc" id="L169">        }</span>
+<span class="nc" id="L170">    }</span>
+
+    /**
+     * This method is supposed to collect basic currency info from the API.
+     * It saves collected data as CurrencyEntity to the DB.
+     * In theory, it could run only once, but it can be run daily in order to update rank and extra info.
+     * It is executed only once when SpringBoot is launched with the annotation @PostConstruct
+     */
+//    @PostConstruct
+    public void getCoinInfoFromAPI() {
+<span class="nc" id="L180">        String url = &quot;https://api.coincap.io/v2/assets&quot;; // CoinCap API endpoint</span>
+        try {
+            // Fetch data from API
+<span class="nc" id="L183">            CurrencyResponse response = restTemplate.getForObject(url, CurrencyResponse.class);</span>
+
+<span class="nc bnc" id="L185" title="All 4 branches missed.">            if (response != null &amp;&amp; response.getData() != null) {</span>
+<span class="nc" id="L186">                response.getData().forEach(asset -&gt; {</span>
+<span class="nc" id="L187">                    CurrencyEntity currencyEntity = new CurrencyEntity();</span>
+<span class="nc" id="L188">                    currencyEntity.setId(asset.getId());</span>
+<span class="nc" id="L189">                    currencyEntity.setName(asset.getName());</span>
+<span class="nc" id="L190">                    currencyEntity.setExplorer(asset.getExplorer());</span>
+<span class="nc" id="L191">                    currencyEntity.setSymbol(asset.getSymbol());</span>
+<span class="nc" id="L192">                    currencyEntity.setRank(asset.getRank());</span>
+<span class="nc" id="L193">                    saveCurrencyEntity(currencyEntity);</span>
+<span class="nc" id="L194">                });</span>
+            }
+<span class="nc" id="L196">        } catch (Exception e) {</span>
+<span class="nc" id="L197">            System.err.println(&quot;Error fetching data: &quot; + e.getMessage());</span>
+<span class="nc" id="L198">            e.printStackTrace();  // Better logging of the exception</span>
+<span class="nc" id="L199">        }</span>
+<span class="nc" id="L200">    }</span>
+
+    /**
+     * Coincap/Candles API endpoint is not available/working
+     */
+    public void testing() {
+<span class="nc" id="L206">        String baseUrl = &quot;https://api.coincap.io/v2/candles&quot;;</span>
+<span class="nc" id="L207">        String baseAssetId = &quot;bitcoin&quot;;</span>
+<span class="nc" id="L208">        String quoteAssetId = &quot;usd&quot;;</span>
+<span class="nc" id="L209">        LocalDate targetDate = LocalDate.of(2024, 11, 1);  // December 21, 2024</span>
+<span class="nc" id="L210">        LocalDate endDate = LocalDate.of(2024, 11, 30);</span>
+        // Start of the day (midnight UTC) in milliseconds
+<span class="nc" id="L212">        long start = targetDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();</span>
+        // End of the day (11:59:59 UTC) in milliseconds
+<span class="nc" id="L214">        long end = endDate.atTime(23, 59, 59).toInstant(ZoneOffset.UTC).toEpochMilli();</span>
+
+        // Construct the URL with the correct query parameters
+<span class="nc" id="L217">        String url = String.format(&quot;%s?baseId=%s&amp;quoteId=%s&amp;interval=d1&amp;start=%d&amp;end=%d&quot;,</span>
+<span class="nc" id="L218">                baseUrl, baseAssetId, quoteAssetId, start, end);</span>
+
+<span class="nc" id="L220">        RestTemplate restTemplate = new RestTemplate();</span>
+
+        try {
+            // Fetch the candle data for Bitcoin
+<span class="nc" id="L224">            String response = restTemplate.getForObject(url, String.class);</span>
+<span class="nc" id="L225">            System.out.println(&quot;Response: &quot; + response);</span>
+            // Process the response as needed
+<span class="nc" id="L227">        } catch (Exception e) {</span>
+<span class="nc" id="L228">            System.err.println(&quot;Error fetching historical data: &quot; + e.getMessage());</span>
+<span class="nc" id="L229">            e.printStackTrace();</span>
+<span class="nc" id="L230">        }</span>
+
+<span class="nc" id="L232">    }</span>
+
+    /**
+     * If you are using Spring Data JPA, the save() method in CrudRepository or JpaRepository behaves like merge():
+     *
+     *     If the entity’s ID exists in the database, the entity is updated.
+     *     If the ID does not exist, the entity is inserted as a new record.
+     * @param priceEntity
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW) // Ensures all the operations are committed together in a transaction
+    public void savePriceEntity(PriceEntity priceEntity) {
+<span class="nc" id="L243">        priceEntityRepository.save(priceEntity);</span>
+<span class="nc" id="L244">    }</span>
+
+    /**
+     *
+     * @param historicalEntity
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW) // Ensures all the operations are committed together in a transaction
+    public void saveHistoricalEntity(HistoricalEntity historicalEntity) {
+<span class="nc" id="L252">        historicalEntityRepository.save(historicalEntity);</span>
+<span class="nc" id="L253">    }</span>
+
+    /**
+     *
+     * @param currencyEntity
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW) // Ensures all the operations are committed together in a transaction
+    public void saveCurrencyEntity(CurrencyEntity currencyEntity) {
+<span class="nc" id="L261">        currencyEntityRepository.save(currencyEntity);</span>
+<span class="nc" id="L262">    }</span>
+
+    /**
+     * This method collects CurrencyEntity from DB and sorts them by rank before returning
+     * @return List&lt;CurrencyEntity&gt;
+     */
+    @Transactional(readOnly = true)
+    public List&lt;CurrencyEntity&gt; getCurrencies() {
+<span class="nc" id="L270">        List&lt;CurrencyEntity&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L271">        list = currencyEntityRepository.findAll();</span>
+<span class="nc" id="L272">        list.sort(Comparator.comparingInt(CurrencyEntity::getRank));</span>
+<span class="nc" id="L273">        return list;</span>
+    }
+
+    /**
+     * Retrieve all PriceEntity from BD
+     * @return List of PriceEntity
+     */
+    @Transactional(readOnly = true)
+    public List&lt;PriceEntity&gt; getPrices() {
+<span class="nc" id="L282">        return priceEntityRepository.findAll();</span>
+
+    }
+
+    /**
+     * Retrieve all HistoricalEntity from BD
+     * @return List of HistoricalEntity
+     */
+    @Transactional(readOnly = true)
+    public List&lt;HistoricalEntity&gt; getHistorical() {
+<span class="nc" id="L292">        List&lt;HistoricalEntity&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L293">        list = historicalEntityRepository.findAll();</span>
+<span class="nc" id="L294">        list.sort(Comparator.comparing(HistoricalEntity::getDate));</span>
+<span class="nc" id="L295">        return list;</span>
+
+    }
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
