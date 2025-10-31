@@ -54,8 +54,8 @@ M1 ILSEN CLASSIQUE
 Configuration de l'appli jira sur github pour automatiser le backlog lors des commits.
 
 J'ai essayé d'utiliser un format sur les commit pour automatiser la mise a jour du Jira.
+![img_10.png](images/img_10.png)
 
-![img_1.png](others/img_1.png)
 
 #### Backlog sur Jira :
 
@@ -78,13 +78,14 @@ J'ai essayé d'utiliser un format sur les commit pour automatiser la mise a jour
     SCRUM-34: Documentation Utilisateur
     SCRUM-35: Rapport
 
+![img09.png](images/img09.png)
+
 Timeline :
 
-![timeline.png](others/timeline.png)
+![timeline.png](images/timeline.png)
 
 Suivi de Projet :
 
-![img.png](others/img.png)
 
 ## Sprint 0
 
@@ -376,13 +377,6 @@ fréquence à laquelle Prometheus doit collecter des métriques des cibles : tou
 La configuration targets : ['host.docker.internal:8080']: Cela spécifie que Prometheus doit extraire des métriques de
 l'application fonctionnant sur host.docker.internal:8080
 
-Malheureusement, le filtre de sécurité des endpoints du springboot n'a pas permis l'accès de prometheus au serveur.
-
-![img_2.png](others/img_2.png)
-
-J'ai essayé d'ajouter une exception sur l'endpoint /actuator/** sur springboot, mais le problème a continué.
-
-![img_1.png](others/img_5.png)
 
 Le but serait de mesurer ces taux :
 * HTTP request rate
@@ -408,14 +402,14 @@ Le fichier aussi installe angular engine sur le conteneur et les dépendances n�
     Prometheus                 :9090   image: prom/prometheus
     Grafana                    :3000   image: grafana/grafana
 
-![img_1.png](others/img_4.png)
+![img_13.png](images/img_13.png)
 
 ## Tests de performance
 
 J'ai créé un plan de tests sur l'appli Apache JMeter configuration pour exécuter 20 threads sur la période de 40
 secondes pour faire des requetes sur l'endpoint /getPrices.
 
-![img_1.png](images/img_7.png)
+![img_7.png](images/img_7.png)
 
 ![img_1.png](images/img_1.png)
 
