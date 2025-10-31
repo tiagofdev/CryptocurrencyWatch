@@ -93,9 +93,15 @@ Créez vos identifiants et connectez-vous:
 Créez une nouvelle base de donnée nommée coincap :
 
     CREATE DATABASE coincap;
+    exit
 
 Assurez-vous que votre base de données est opérationnelle et que l'application peut s'y connecter avant de l'étape
 prochaine.
+
+Copiez le schéma de la base de données à partir du fichier /Mariadb/coincapData.sql
+
+    mysql -u root -p coincap < \Mariadb\coincapData.sql
+
 
 ### Installation du serveur SpringBoot
 
@@ -282,9 +288,9 @@ Example Response :
 
 ## Architecture de l'algorithme 
 
-![img_4.png](img_4.png)
+![img_4.png](images/img_4.png)
 
-![img_5.png](img_5.png)
+![img_5.png](images/img_5.png)
     
 ## Structure du Système
 

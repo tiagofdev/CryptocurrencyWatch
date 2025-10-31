@@ -360,7 +360,7 @@ Principales automatisations sur pull request
 * Sonarqube
 
 Avec github hooks, j'ai ajouté une commande pour exécuter des tests sur SonarQube sur le conteneur local quand on 
-détecte un push sur dev
+détecte un push sur la branch dev
     
     # .git/hooks/post-merge
     if [ "$(git rev-parse --abbrev-ref HEAD)" == "dev" ]; then
@@ -372,7 +372,7 @@ détecte un push sur dev
     -Dsonar.token=sqp_152a67a920fba399c9d95e7c121995a1a89f160a
     fi
 
-![img.png](img.png)
+
 
 * Prometheus et Grafana
 
@@ -423,11 +423,11 @@ Le fichier aussi installe angular engine sur le conteneur et les dépendances n�
 J'ai créé un plan de tests sur l'appli Apache JMeter configuration pour exécuter 20 threads sur la période de 40 
 secondes pour faire des requetes sur l'endpoint /getPrices.
 
-![img_1.png](img_7.png)
+![img_1.png](images/img_7.png)
 
-![img_1.png](img_1.png)
+![img_1.png](images/img_1.png)
 
-![img_2.png](img_2.png)
+![img_2.png](images/img_2.png)
 
 
 ## Tests de Securité
@@ -436,7 +436,7 @@ Le plugin Owasp est exécuté dans le package des tests mvn et génère un rappo
 
 [dependency-check-report.html](target%2Fdependency-check-report.html)
 
-![img_3.png](img_3.png)
+![img_3.png](images/img_3.png)
 
 ## Tests Unitaires
 
